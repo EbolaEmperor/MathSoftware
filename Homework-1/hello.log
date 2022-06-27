@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2022.6.27)  27 JUN 2022 18:02
+This is XeTeX, Version 3.141592653-2.6-0.999993 (TeX Live 2022/dev/Debian) (preloaded format=xelatex 2022.6.27)  27 JUN 2022 21:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -390,10 +390,10 @@ Package xeCJK Warning: Unknown CJK family `kai' is being ignored.
 
 
 LaTeX Font Warning: Font shape `OMX/cmex/m/n' in size <10.53937> not available
-(Font)              size <10.95> substituted on input line 17.
+(Font)              size <10.95> substituted on input line 21.
 
 
-Overfull \hbox (3.32498pt too wide) detected at line 21
+Overfull \hbox (3.32498pt too wide) detected at line 25
 []\OML/cmm/m/it/10.53937 f\OT1/cmr/m/n/10.53937 (\OML/cmm/m/it/10.53937 x\OT1/c
 mr/m/n/10.53937 ) = \OML/cmm/m/it/10.53937 f\OT1/cmr/m/n/10.53937 (\OML/cmm/m/i
 t/10.53937 x[]\OT1/cmr/m/n/10.53937 ) + \OML/cmm/m/it/10.53937 f[]\OT1/cmr/m/n/
@@ -412,7 +412,7 @@ m/n/10.53937 ^^@ \OML/cmm/m/it/10.53937 x[]\OT1/cmr/m/n/10.53937 )[] + \OML/cmm
 LaTeX Font Info:    Font shape `TU/FandolSong-Regular(0)/m/sl' in size <10.5393
 7> not available
 (Font)              Font shape `TU/FandolSong-Regular(0)/m/it' tried instead on
- input line 57.
+ input line 61.
  [2] (./hello.aux)
 
 LaTeX Font Warning: Size substitutions with differences
@@ -420,10 +420,10 @@ LaTeX Font Warning: Size substitutions with differences
 
  ) 
 Here is how much of TeX's memory you used:
- 7749 strings out of 476191
- 215369 string characters out of 5812072
- 547351 words of memory out of 5000000
- 28403 multiletter control sequences out of 15000+600000
+ 7793 strings out of 476191
+ 218830 string characters out of 5812072
+ 550351 words of memory out of 5000000
+ 28447 multiletter control sequences out of 15000+600000
  476105 words of font info for 73 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  89i,10n,97p,344b,294s stack positions out of 5000i,500n,10000p,200000b,80000s
