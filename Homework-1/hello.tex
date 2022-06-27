@@ -1,0 +1,57 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xeCJK}
+
+\title{\textbf{带Peano余项的Taylor公式}}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006}
+
+\begin{document}
+
+\maketitle
+
+\section{定理描述}
+
+设$f(x)$在$x_0$处有$n$阶导数，则存在$x_0$的一个邻域，对于该邻域中的任一点$x$，成立
+
+\begin{equation}
+    f(x)=f(x_0)+f'(x_0)(x-x_0)+\frac{f''(x_0)}{2!}(x-x_0)^2+\cdots+\frac{f^{(n)}(x_0)}{n!}(x-x_0)^n+r_n(x),
+\end{equation}
+
+其中余项$r_n(x)$满足
+
+\begin{equation}
+    r_n(x)=o((x-x_0)^n).
+\end{equation}
+
+\section{证明}
+
+考虑$r_n(x)=f(x)-\sum_{k=0}^n\frac{1}{k!}f^{(k)}(x_0)(x-x_0)^k$，只要证明$r_n(x)=o((x-x_0)^n)$. 显然有：
+
+\begin{equation}
+    r_n(x_0)=r_n'(x_0)=r_n''(x_0)=\cdots =r_n^(n-1)(x_0)=0.
+\end{equation}
+
+反复应用洛必达法则，可得：
+
+\begin{align*}
+   \lim_{x\to x_0} \frac{r_n(x)}{(x-x_0)^n} &= \lim_{x\to x_0} \frac{r'_n(x)}{n(x-x_0)^{n-1}}\\
+   &= \lim_{x\to x_0} \frac{r''_n(x)}{n(n-1)(x-x_0)^{n-2}}\\
+   & \qquad \vdots\\
+   &= \lim_{x\to x_0} \frac{r^{(n-1)}_n(x)}{n(n-1)\cdots 2(x-x_0)} \\
+   &= \frac{1}{n!}\lim_{x\to x_0} \left[\frac{f^{(n-1)}(x)-f^{(n-1)}(x_0)-f^{(n)}(x_0)(x-x_0)}{x-x_0}\right]\\
+   &= \frac{1}{n!} \lim_{x\to x_0} \left[\frac{f^{(n-1)}(x)-f^{(n-1)}(x_0)}{x-x_0}-f^{(n)}(x_0)\right]\\
+   &=\frac{1}{n!}\left[f^{(n)}(x_0)-f^{(n)}(x_0)\right]=0
+\end{align*}
+
+因此
+
+\begin{equation*}
+    r_n(x) = o((x-x_0)^n).
+\end{equation*}
+
+证毕.
+
+\end{document}
