@@ -1,0 +1,103 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xeCJK}
+\usepackage{graphicx} %插入图片的宏包
+\usepackage{float} %设置图片浮动位置的宏包
+\usepackage{subfigure} %插入多图时用子图显示的宏包
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage[colorlinks,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{cite}
+
+\geometry{a4paper,scale=0.8}
+\CTEXsetup[format={\Large\bfseries}]{section}
+
+\title{\textbf{一个小白的Linux工作环境配置}}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006}
+
+\begin{document}
+
+\maketitle
+
+\section{基本信息}
+
+Linux发行版名称：Ubuntu 20.04 LTS
+
+Linux版本号：5.15.0-25-generic
+
+本文作者清空了一台四年前购买的老电脑，将其改装为了上述系统
+
+\section{主要配置}
+
+换源：采用了huaweicloud的镜像
+
+软件包如下：
+
+\begin{enumerate}[itemindent=2em]
+    \setlength{\itemsep}{-5pt}
+    \item \verb| gcc |：C语言编译器
+    \item \verb| g++ |：C++语言编译器
+    \item \verb| make |：C/C++项目构建工具
+    \item \verb| git |：版本管理工具
+    \item \verb| ssh |：安全通讯工具
+    \item \verb| VSCode |：免费的全功能文本编辑器，通过第三方途径安装
+    \item \verb| Chrome |：世界上最好的浏览器，通过第三方途径安装
+    \item \verb| texlive |：功能强大的 \LaTeX 编译器
+    \item \verb| okular |：pdf文档查看器
+    \item \verb| matlab |：强大的数学软件，通过第三方途径安装
+    \item \verb| python3 |：python3解释器
+    \item \verb| php-cli |：php解释器
+    \item \verb| Node.js |：Node.js解释器
+    \item \verb| hexo |：免费、开源的的静态Blog平台
+    \item \verb| cmatrix |：意义不明的娱乐小彩蛋
+\end{enumerate}
+
+额外的配置工作较多，列举几项如下：\cite{name1}
+
+\begin{enumerate}[itemindent=2em]
+    \setlength{\itemsep}{-5pt}
+    \item 设置git用户的email和name
+    \item 生成ssh-key，并将公钥上传至github服务器与个人服务器
+    \item 在个人服务器中配置钩子，以使用hexo
+    \item 在VSCode中作必要的语法高亮配置
+\end{enumerate}
+
+\section{工作规划}
+
+\subsection{使用场合}
+
+由于本文作者将他的一台电脑直接改装成了Linux，因此这台电脑将会成为他的主力工作电脑。
+
+本文作者非常喜欢coding，且有四年的Linux使用经验，他将会使用这台电脑进行各种语言的coding。包括算法设计、web开发、娱乐性coding、论文书写等等。
+
+总之由于这台电脑的出现，本文作者除机器学习外的一切学术活动都将转移到这台电脑。但是这台电脑由于不具有足够强大的显卡而不能进行机器学习的模型训练，因此无法承担相关工作。
+
+\subsection{需求分析}
+
+此电脑非常符合本文作者的学术需求（除了机器学习）。
+
+唯一的不足是Linux系统下的通讯方案受限，无法使用钉钉、微信、QQ等国内主流通讯工具，仍然需要Windows作为媒介。
+
+本文作者曾使用过wine运行QQ与微信，但由于版本古老，使用体验极差。本文作者将再作斟酌，如非刚需，绝不再使用wine。
+
+\section{稳定与安全措施}
+
+\subsection{稳定措施：代码备份}
+
+所有的代码都要建立git仓库，并与github远程仓库建立连接。形成时刻与远程仓库同步的习惯。
+
+\subsection{安全措施：权限最小化}
+
+传统的操作系统实现基于用户的特权管理策略。超级用户拥有所有特权,从而可以执行任何特权操作,这是导致系统危害的一个主要根源。最小特权原则要求系统中每个用户或进程仅有执行其授权任务所必需的最小特权集合。通过实施最小特权,既能限制合法用户在其职责范围内使用系统,又能将恶意用户对系统的破坏降至最低。\cite{谢欣伟2008操作系统用户特权最小化的研究与实现}
+
+为了实现权限最小化，在使用过程中将避免root权限的滥用，不留下不必要的安全隐患。
+
+特别地，由root用户所有的、具有SUID的权限的程序非常危险，因为它可以轻易地提权，一旦被攻击者利用，后果不堪设想。因此需要特别注意拥有这些权限的可执行程序，去除不必要的SUID位。\cite{牛铁2011超级计算集群的安全防护}
+
+\bibliographystyle{plain}
+\bibliography{reference}
+
+\end{document}
