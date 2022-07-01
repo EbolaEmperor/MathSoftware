@@ -1,0 +1,268 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{xeCJK}
+\usepackage{graphicx} %插入图片的宏包
+\usepackage{float} %设置图片浮动位置的宏包
+\usepackage{subfigure} %插入多图时用子图显示的宏包
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{verbatimbox}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage[colorlinks,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{cite}
+
+\newtheorem{example}{例}             % 整体编号
+\newtheorem{theorem}{定理}[section]  % 按 section 编号
+\newtheorem{definition}{定义}
+\newtheorem{axiom}{公理}
+\newtheorem{property}{性质}
+\newtheorem{proposition}{命题}
+\newtheorem{lemma}{引理}
+\newtheorem{corollary}{推论}
+\newtheorem{remark}{注解}
+\newtheorem{condition}{条件}
+\newtheorem{conclusion}{结论}
+\newtheorem{assumption}{假设}
+
+\geometry{a4paper,scale=0.8}
+\CTEXsetup[format={\Large\bfseries}]{section}
+
+\title{\textbf{Manderbrot Set 的生成和探索}}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    \CJKfamily{kai} 本文借助自编的带deflate无损压缩的PNG编码器, 实现了Mandelbrot集指定区域图像的生成, 以某一点为中心, 逐渐缩小半径, 生成了一系列Mandelbrot集局部图像. 最后介绍了本文采用的PNG编码器的原理, 并分析了压缩效果.
+\end{abstract}
+
+\section{引言}
+
+本文的第一部分介绍了Mandelbrot集的生成原理, 并给出了一种染色方法, 给出了算法流程图描述, 并在Github仓库中提供了算法实现的c++源代码. 
+
+同时, 本文作者注意到无压缩图像格式对存储空间的巨大浪费, 因此研究了PNG图像的编码格式, 借助Github用户 \href{https://Github.com/queensun}{queensun} 用C语言实现的zlib压缩算法, 用c++完成了一个实现简单、封装优雅的PNG编码器. 本文的后半部分着重介绍了PNG的一种最简单的支持无损压缩的编码格式, 并介绍了本文实现的带deflate无损压缩的PNG编码器, 同时也在Github仓库中提供了编码器的c++源代码. 
+
+\section{问题背景}
+
+Mandelbrot集是复动力系统中著名的图形, 由Mandelbrot教授在20世纪70年代发现, 被称为“上帝的指纹”. 其特点是无限分形: 在Mandelbrot集的边界, 只要计算足够精细, 不管图形被放大多少倍, 总是能显示出更加复杂的局部. 这些局部和整体具有一些相似性, 可以观察到很多不同的图形, 以及一些相似图形的重复出现. 
+
+本文作者第一次接触到Mandelbrot集是在尹永成教授的分析学课上. 尹老师展示了他在复动力系统中建设性的研究成果, 并向学生展示了Mandelbrot集的美丽图形. 
+
+Mandelbrot集的绘制一直是计算数学家和计算机学家所热衷的事情, 由于Mandelbrot集本身的无限分形性质, 只要染色函数足够优美, 就可以通过局部放大生成一系列美观的图形, 这些图形可以广泛应用于设计领域. 
+
+\section{Mandelbrot集的原理与生成}
+
+\subsection{Mandelbrot集的数学原理}
+
+\begin{definition}
+    记$f_c(z)=z^2+c$, 其中$c\in\mathbb{C}$. 记$f_c^{\circ(0)}(z)=f_c(z)$, 迭代地定义$f^{\circ(k)}_c(z)=f_c(f^{\circ(k-1)}_c(z))\;(k\geq 1)$. 称集合
+    \begin{equation*}
+        \mathcal{M}=\{c\in\mathbb{C}:f_c^{\circ(n)}(0)\text{关于}n\text{有界}\}
+    \end{equation*}
+    为Mandelbrot集.
+\end{definition}
+
+\begin{theorem}
+    设$c\in\mathbb{C}$, 若$c\in\mathcal{M}$, 则$|f_c^{\circ(n)}(0)|\leq 2\;(\forall n\in\mathbb{N})$.
+\end{theorem}
+
+证明见参考文献\cite{branner1989mandelbrot}.
+
+\subsection{Mandelbrot集的生成算法}
+
+利用定理1.1, 可以得知, 对于一个点$c$, 令$z_0=0,\;z_n=z_{n-1}^2+c$, 不断地执行迭代, 当$|z_n|>2$时即可判定$c\notin \mathcal{M}$. 然而计算机不可能达到无穷次迭代, 因此设置迭代次数上限$N$, 当$|z_n|\leq 2\;(\forall n=0,...,N)$时, 就近似地认为$z_n\in \mathcal{M}$. 显然$N$越大计算结果越精确, 但计算代价也越大. 
+
+对于$c\notin \mathcal{M}$, 令$L(c)$表示使$|z_n|>2$的最小$n$值, 给出着色函数$g:\mathbb{N} \to \mathbb{Z}_{255}^3$, 将$c$点的颜色设为$g(L(c))$, 这样即可获得分层的彩色图像. 本文采取的着色函数为: 
+\begin{equation*}
+    g(n)=(255\log_2(n)\mod 256,\;155\log_2(n)\mod 256,\;150)
+\end{equation*}
+
+按照上述的着色规则, 相邻的两个颜色之间具有一个边界, 称为Mandelbrot等位线. 其形状从圆形到椭圆再到梨形, 不断趋近于边界的形状. 事实上, Mandelbrot等位线的表达式是可以计算的, 详见参考文献\cite{张国栋2005Mandelbrot}.
+
+下面给出全图染色的算法伪代码: 
+
+\begin{algorithm}[H]
+	\caption{Mandelbrot集染色算法}
+	\small
+	\KwIn{ 中心点坐标center, 绘图区域直径diam, 图片宽度W, 图片高度H, 最大迭代次数N, 着色函数g}
+	\KwOut{ picture.png }
+	
+	\For{$i=1$ to $H$ }
+	{
+        \For{$j=1$ to $W$}
+        {
+            $c$ = PixelIndexToCodinate(center,diam,$i,j$)\\
+            $z_0$ = 0\\
+            $k$ = 0\\
+            \While{$|z_k|\leq 2$}
+            {
+                $z_{k+1}=z_k^2+c$\\
+                $k\gets k+1$\\
+                \If{$k$ == $N$}
+                {
+                    break
+                }
+            }
+            \eIf{$k$ == $N$}
+            {
+                setPixel($i$,$j$,(0,0,0))
+            }
+            {
+                setPixel($i$,$j$,$g(k)$)
+            }
+        }
+	}
+    \textbf{print image to} picture.png
+\end{algorithm}
+
+\subsection{Mandelbrot集的图像展示}
+
+以$(-0.72624685,0.240377)$为中心, $5$为初始直径, 每次将直径减半, 并适当增大最大迭代次数, 获得下面一系列Mandelbrot集局部图像. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.18\textwidth]{img/pic0.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1.png}
+    \includegraphics[width=0.18\textwidth]{img/pic2.png}
+    \includegraphics[width=0.18\textwidth]{img/pic3.png}
+    \includegraphics[width=0.18\textwidth]{img/pic4.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic5.png}
+    \includegraphics[width=0.18\textwidth]{img/pic6.png}
+    \includegraphics[width=0.18\textwidth]{img/pic7.png}
+    \includegraphics[width=0.18\textwidth]{img/pic8.png}
+    \includegraphics[width=0.18\textwidth]{img/pic9.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic10.png}
+    \includegraphics[width=0.18\textwidth]{img/pic11.png}
+    \includegraphics[width=0.18\textwidth]{img/pic12.png}
+    \includegraphics[width=0.18\textwidth]{img/pic13.png}
+    \includegraphics[width=0.18\textwidth]{img/pic14.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic15.png}
+    \includegraphics[width=0.18\textwidth]{img/pic16.png}
+    \includegraphics[width=0.18\textwidth]{img/pic17.png}
+    \includegraphics[width=0.18\textwidth]{img/pic18.png}
+    \includegraphics[width=0.18\textwidth]{img/pic19.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic20.png}
+    \includegraphics[width=0.18\textwidth]{img/pic21.png}
+    \includegraphics[width=0.18\textwidth]{img/pic22.png}
+    \includegraphics[width=0.18\textwidth]{img/pic23.png}
+    \includegraphics[width=0.18\textwidth]{img/pic24.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic25.png}
+    \includegraphics[width=0.18\textwidth]{img/pic26.png}
+    \includegraphics[width=0.18\textwidth]{img/pic27.png}
+    \includegraphics[width=0.18\textwidth]{img/pic28.png}
+    \includegraphics[width=0.18\textwidth]{img/pic29.png}
+    \\
+    \centering
+    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic30.png}
+    \includegraphics[width=0.18\textwidth]{img/pic31.png}
+    \includegraphics[width=0.18\textwidth]{img/pic32.png}
+    \includegraphics[width=0.18\textwidth]{img/pic33.png}
+    \includegraphics[width=0.18\textwidth]{img/pic34.png}
+    \caption{以(-0.72624685,0.240377)为中心展开的Mandelbrot集图像}
+\end{figure}
+
+\section{无损压缩PNG编码器的原理与实现}
+
+\subsection{PNG编码方式}
+
+本文实现的是一个简单的8位真彩色图像带压缩PNG编码器. 为简明起见, 本文采用符合需求的最简单编码方式: 由文件头和IHDR, IDAT, IEND三个数据块组成. 其中文件头为固定8字节: 
+
+\begin{verbatim}
+    8950 4e47 0d0a 1a0a
+\end{verbatim}
+
+一个数据块有长度（Length）、标签（Tag）、数据（Data）、校验码（CRC）四个部分, 说明如下.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{名称} & \textbf{长度} & \textbf{说明} \\ \hline
+        Length & 4 bit & Data部分的字节数, 用32位无符号整型方式编码 \\ \hline
+        Tag & 4 bit & 数据块名称对应的ASCII码的十六进制, 例如IHDR的Tag部分为 \verb |4948 4452| \\ \hline
+        Data & 可变长 & 数据块实际存储的数据内容 \\ \hline
+        CRC & 4 bit & 从Tag开头到Data结束部分的4字节CRC校验码 \\ \hline
+    \end{tabular}
+\end{table}
+
+IEND部分不存储数据, 其Data部分为空, 因此其CRC校验码也恒为常值. 下面说明IHDR与IDAT的Data部分编码.
+
+\subsubsection{IHDR的Data编码}
+
+IHDR的Data部分由13个字节构成, 其具体含义如下: 
+
+\begin{enumerate}[itemindent=2em]
+    \setlength{\itemsep}{-5pt}
+    \item \verb| width |: 4bit, 32位无符号整数表示图片宽度
+    \item \verb| height |: 4bit, 32位无符号整数表示图片高度
+    \item \verb| bit depth |: 1bit, 表示图像深度, 本文取 \verb |0x08| 表示8位
+    \item \verb| color type |: 1bit, 表示色彩类型, 本为取 \verb |0x02| 表示真彩色图像
+    \item \verb| compression |: 1bit, 表示压缩方式, 本文取 \verb |0x00| 表示deflate/inflate无损压缩
+    \item \verb| filter |: 1bit, 表示滤波器方法, 本文取 \verb |0x00| 表示自适应选择, 实际上本文不做滤波器
+    \item \verb| interlance |: 1bit, 表示扫描方法, 本文取 \verb |0x00| 表示非隔行扫描
+\end{enumerate}
+
+\subsubsection{IDAT的Data编码}
+
+对于一个$w\times h$大小的图像, 其IDAT的Data部分原始数据有$h*(1+w)$ bit, 设$R_{ij}$, $G_{ij}$, $B_{ij}$分别表示第$i$行第$j$列像素点的R/G/B值, 其编码方式可表述为: 
+\begin{equation*}
+    0,R_{11},G_{11},B_{11},R_{12},G_{12},B_{12},\cdots,R_{1w},G_{1w},B_{1w},0,R_{21},G_{21},B_{21},R_{22},G_{22},B_{22},\cdots,R_{2w},G_{2w},B_{2w},\cdots
+\end{equation*}
+
+将编码存入 \verb |originData| 中, 然后调用zlib开源库函数: 
+
+\begin{verbatim}
+    compress(compressData, &compressLen, originData, h*(1+w))
+\end{verbatim}
+
+获得压缩后的数据, 存储在 \verb |compressData| 中, 其长度为 \verb |compressLen|, 压缩后的数据构成IDAT的Data部分的全部内容.
+
+\subsection{PNG编码器的实现与接口}
+
+本文根据上述原理实现了带deflate无损压缩的PNG编码器, 源码见: \href{https://Github.com/EbolaEmperor/MathSoftware/tree/main/Homework-4}{Github - 源码链接}, 函数接口见 \verb |png.h| , 函数实现见 \verb |png.cpp| .
+
+这款编码器封装优秀, 使用非常简易, 示例如下: 
+
+\begin{verbatim}
+    png myPng(1080,1920);                 //初始化一个高1080,宽1920的png
+    myPng.setpix(540,960,255,255,255);    //将第540行960列的像素RGB值设为(255,255,255)
+    myPng.output("myPng.png");            //将png图像输出到myPng.png中
+\end{verbatim}
+
+\subsection{测试结果}
+
+图1中的所有图像均由本文PNG编码器生成.其中每个图都是$1920\times 1080$尺寸的高清图像, 若不带压缩, 每个图的大小约为: $\frac{1920\times 1080\times 3}{1024\times 1024}=6.2$(MB).使用本文PNG编码器, 35个图像总计61.3 MB, 平均单个图片大小1.75MB, 平均压缩率为$71.8\%$.
+
+事实上, 由于压缩算法的普遍特性, 当图像的重复元素较多时, 压缩率较高, 反之较低.图1中压缩率最大与压缩率最小的两个图像如下: 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{img/pic0.png}
+    \hspace{15mm}
+    \includegraphics[width=0.3\textwidth]{img/pic23.png}
+    \caption{图1中的两个典型图像}
+\end{figure}
+
+左图仅142.2 kB, 压缩率为$97.7\%$；右图2.6MB, 压缩率为$58.1\%$.
+
+\bibliographystyle{plain}
+\bibliography{reference}
+
+\end{document}
