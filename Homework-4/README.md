@@ -43,12 +43,13 @@ bash compile.sh
 - `reference.bib`：引用文献目录
 - `Makefile`：论文编译指令
 - `source`目录包含所有源代码文件
-- - `main.cpp`：绘图主程序
-- - `paperpicgen.cpp`：生存论文中所有图片的主程序
-- - `png.h`：png编码器的头文件
-- - `png.cpp`：png编码器的实现
-- - `axis.h`：像素坐标-轴坐标转换器的头文件
-- - `axis.cpp`：像素坐标-轴坐标转换器的实现
-- - `mandelbrot.h`：Mandelbrot集迭代器的头文件
-- - `mandelbrot.h`：Mandelbrot集迭代器的实现
-- - `Makefile`：代码编译指令
+  - `main.cpp`：绘图主程序
+  - `paperpicgen.cpp`：生存论文中所有图片的主程序
+  - `png.h`：png编码器的头文件
+  - `png.cpp`：png编码器的实现
+  - `axis.h`：像素坐标-轴坐标转换器的头文件
+  - `axis.cpp`：像素坐标-轴坐标转换器的实现
+  - `mandelbrot.h`：Mandelbrot集迭代器的头文件
+  - `mandelbrot.h`：Mandelbrot集迭代器的实现
+  - `Makefile`：代码编译指令
+  - `lib`：由[queensun][https://Github.com/queensun]编写的zlib开源库
