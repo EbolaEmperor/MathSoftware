@@ -52,4 +52,4 @@ bash compile.sh
   - `mandelbrot.h`：Mandelbrot集迭代器的头文件
   - `mandelbrot.h`：Mandelbrot集迭代器的实现
   - `Makefile`：代码编译指令
-  - `lib`：由[queensun][https://Github.com/queensun]编写的zlib开源库
+  - `lib`：由[queensun](https://Github.com/queensun)编写的zlib开源库
