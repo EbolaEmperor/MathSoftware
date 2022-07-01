@@ -5,5 +5,5 @@ mkdir img
 make
 ./paperpicgen
 cd ..
-mv source/img/ img/
+mv source/img/ .
 make
