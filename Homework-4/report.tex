@@ -33,7 +33,9 @@
 
 \title{\textbf{Manderbrot Set 的生成和探索}}
 
-\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006}
+\date{}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}}
 
 \begin{document}
 
@@ -45,13 +47,13 @@
 
 \section{引言}
 
-本文的第一部分介绍了Mandelbrot集的生成原理, 并给出了一种染色方法, 给出了算法流程图描述, 并在Github仓库中提供了算法实现的c++源代码. 
+本文的目的是生成一系列Mandelbrot集图像. 第一部分介绍了Mandelbrot集的生成原理, 并给出了一种染色方法, 给出了算法流程图描述, 并在Github仓库中提供了算法实现的c++源代码. 
 
 同时, 本文作者注意到无压缩图像格式对存储空间的巨大浪费, 因此研究了PNG图像的编码格式, 借助Github用户 \href{https://Github.com/queensun}{queensun} 用C语言实现的zlib压缩算法, 用c++完成了一个实现简单、封装优雅的PNG编码器. 本文的后半部分着重介绍了PNG的一种最简单的支持无损压缩的编码格式, 并介绍了本文实现的带deflate无损压缩的PNG编码器, 同时也在Github仓库中提供了编码器的c++源代码. 
 
 \section{问题背景}
 
-Mandelbrot集是复动力系统中著名的图形, 由Mandelbrot教授在20世纪70年代发现, 被称为“上帝的指纹”. 其特点是无限分形: 在Mandelbrot集的边界, 只要计算足够精细, 不管图形被放大多少倍, 总是能显示出更加复杂的局部. 本文作者第一次接触到Mandelbrot集是在尹永成教授的分析学课上. 尹老师展示了他在复动力系统中建设性的研究成果, 并向学生展示了Mandelbrot集的美丽图形. 
+Mandelbrot集是复动力系统中著名的图形, 由Mandelbrot教授在20世纪70年代发现, 被称为“上帝的指纹”. 其特点是无限分形. 本文作者第一次接触到Mandelbrot集是在尹永成教授的分析学课上. 尹老师展示了他在复动力系统中建设性的研究成果, 并向学生展示了Mandelbrot集的美丽图形. 
 
 Mandelbrot集的绘制一直是计算数学家和计算机学家所热衷的事情, 由于Mandelbrot集本身的无限分形性质, 只要染色函数足够优美, 就可以通过局部放大生成一系列美观的图形, 这些图形可以广泛应用于设计领域. 
 
@@ -64,49 +66,67 @@ Mandelbrot集的绘制一直是计算数学家和计算机学家所热衷的事�
     \begin{equation*}
         \mathcal{M}=\{c\in\mathbb{C}:f_c^{\circ(n)}(0)\text{关于}n\text{有界}\}
     \end{equation*}
-    为Mandelbrot集.
+    为\textbf{Mandelbrot集}.
 \end{definition}
 
-\begin{theorem}
+\begin{property}
     设$c\in\mathbb{C}$, 若$c\in\mathcal{M}$, 则$|f_c^{\circ(n)}(0)|\leq 2\;(\forall n\in\mathbb{N})$.
-\end{theorem}
+\end{property}
 
-证明见参考文献\cite{branner1989mandelbrot}.
+证明见参考文献\cite{branner1989mandelbrot}. 这个定理可以推导出Mandelbrot集的生成算法. 
+
+\begin{definition}
+    对于$c\notin \mathcal{M}$, 令
+    \begin{equation}
+        L(c)=\min\{n:f_c^{\circ(n)}(0)|> 2\}
+    \end{equation}
+    称$L(c)$为点$c$的\textbf{层数}, 记第$n(n\geq 0)$层的所有点构成的集合为$L_n$, 即: 
+    \begin{equation}
+        L_n=\{c:L(c)=n\}
+    \end{equation}
+\end{definition}
+
+\begin{property}
+    $\forall n\geq 1$, $L_n$是一个连通集, 其连通数为2, 外边界为$\{c:|P_{n}(c)|=2\}$, 其中$P_n$是一个$n$次多项式.
+\end{property}
+
+性质2表明, $L_n$具有简单光滑的封闭边界. 其具体形式见参考文献\cite{张国栋2005Mandelbrot}. 由性质2易得以下结果.
+
+\begin{property}
+    $\forall c\notin \mathcal{M}$, 存在一个充分小的邻域$N(c)$, 使得在该邻域内, 函数$L(z)$要么恒为常值, 要么只有两种取值且由一条简单光滑曲线分割两个取值不同的区域.
+\end{property}
+
+性质3表明, 任何Mandelbrot集外部的点, 都只能“有限分形”. 这两条性质将指导Mandelbrot集局部放大的绘图中心点选取.
+
+\begin{property}
+    设$\{z_n\}$是一列复平面上的点列, 且$z_n\in L_n$, 则其任何子列都存在聚点, 且聚点$z^*\in \partial \mathcal{M}$.
+\end{property}
 
 \subsection{Mandelbrot集的生成算法}
 
-利用定理1.1, 可以得知, 对于一个点$c$, 令$z_0=0,\;z_n=z_{n-1}^2+c$, 不断地执行迭代, 当$|z_n|>2$时即可判定$c\notin \mathcal{M}$. 然而计算机不可能达到无穷次迭代, 因此设置迭代次数上限$N$, 当$|z_n|\leq 2\;(\forall n=0,...,N)$时, 就近似地认为$z_n\in \mathcal{M}$. 显然$N$越大计算结果越精确, 但计算代价也越大. 
+利用性质1, 可以得知, 对于一个点$c$, 令$z_0=0,\;z_n=z_{n-1}^2+c$, 不断地执行迭代, 当$|z_n|>2$时即可判定$c\notin \mathcal{M}$. 然而计算机不可能达到无穷次迭代, 因此设置迭代次数上限$N$, 当$|z_n|\leq 2\;(\forall n=0,...,N)$时, 就近似地认为$z_n\in \mathcal{M}$. 显然$N$越大计算结果越精确, 但计算代价也越大. 
 
-对于$c\notin \mathcal{M}$, 令$L(c)$表示使$|z_n|>2$的最小$n$值, 给出着色函数$g:\mathbb{N} \to \mathbb{Z}_{255}^3$, 将$c$点的颜色设为$g(L(c))$, 这样即可获得分层的彩色图像. 本文采取的着色函数为: 
-\begin{equation*}
-    g(n)=(255\log_2(n)\mod 256,\;155\log_2(n)\mod 256,\;150)
-\end{equation*}
+对于$c\notin \mathcal{M}$, 给出着色函数$g:\mathbb{N} \to \mathbb{Z}_{255}^3$, 将$c$点的颜色设为$g(L(c))$, 这样即可获得分层的彩色图像. 本文采取的着色函数为: $g(n)=(255\log_2(n)\mod 256,\;155\log_2(n)\mod 256,\;150)$
 
-按照上述的着色规则, 相邻的两个颜色之间具有一个边界, 称为Mandelbrot等位线. 其形状从圆形到椭圆再到梨形, 不断趋近于边界的形状. 事实上, Mandelbrot等位线的表达式是可以计算的, 详见参考文献\cite{张国栋2005Mandelbrot}.
-
-下面给出全图染色的算法伪代码: 
+下面给出局部染色算法, 算法中的\textbf{PixelIndexToCodinate}是像素点坐标到轴坐标的转换函数: 
 
 \begin{algorithm}[H]
-	\caption{Mandelbrot集染色算法}
+	\caption{drawMandelbrotImage}
 	\small
-	\KwIn{ 中心点坐标center, 绘图区域直径diam, 图片宽度W, 图片高度H, 最大迭代次数N, 着色函数g}
+	\KwIn{ 中心点坐标center, 绘图区域直径diam, 图片宽度W, 图片高度H, 最大迭代次数N, 着色函数g, 文件名Fname}
 	\KwOut{ picture.png }
 	
 	\For{$i=1$ to $H$ }
 	{
         \For{$j=1$ to $W$}
         {
-            $c$ = PixelIndexToCodinate(center,diam,$i,j$)\\
+            $c$ = \textbf{PixelIndexToCodinate}(center,diam,$i,j$)\\
             $z_0$ = 0\\
             $k$ = 0\\
-            \While{$|z_k|\leq 2$}
+            \While{$|z_k|\leq 2$ and $k<N$}
             {
                 $z_{k+1}=z_k^2+c$\\
                 $k\gets k+1$\\
-                \If{$k$ == $N$}
-                {
-                    break
-                }
             }
             \eIf{$k$ == $N$}
             {
@@ -117,63 +137,87 @@ Mandelbrot集的绘制一直是计算数学家和计算机学家所热衷的事�
             }
         }
 	}
-    \textbf{print image to} picture.png
+    \textbf{print image to} Fname.png
 \end{algorithm}
+
+\subsection{Mandelbrot集的局部放大算法}
+
+Mandelbrot集最为人熟知的性质就是无限分形, 以特定的点为中心, 不断放大, 可以生成无穷无尽的图像. 下面给出一个算法, 对于给定的绘图中心$c$, 生成一共28张图像, 每张图都是前一张图放大2.73倍的结果. 
+
+\begin{algorithm}[H]
+	\caption{getLocalImages}
+	\small
+	\KwIn{ 中心点坐标center, 图片宽度W, 图片高度H, 着色函数g}
+	\KwOut{ picture\_1.png, ..., picture\_32.png }
+	
+    $d=5.0$\\
+    $N=250$\\
+	\For{$i=1$ to $28$ }
+	{
+        \textbf{drawMandelbrotImage}(center,d,W,H,N,g,picture\_$i$)
+        $d\gets d \times 0.99^100$
+        $N\gets round(N \times 1.0025^100)$
+	}
+\end{algorithm}
+
+上述算法最大的困难在于中心的选取, 中心选取不当产生的图会非常单调. 
+
+根据性质3, 对于一个Mandelbrot集外部的点, 它总是有限分形的, 放大到一定倍数后整个图将只具有一种颜色. 而对于Mandelbrot集内部的点, 放大到一定倍数后整个图中所有点都位于Mandelbrot集内部, 也不再具有分形性质. 因此, 最理想的绘图中心是Mandelbrot集的边界点. 
+
+Mandelbrot集的边界点无法用初等表达式给出, 在计算机中无法精确表示. 因此根据性质4, 一个好的策略是, 选择一个浮点数$c$, 使得$L(c)$充分大, 从而充分趋近于Mandelbrot集边界, 进而获得优美的图案. 
 
 \subsection{Mandelbrot集的图像展示}
 
-以$(-0.72624685,0.240377)$为中心, $5$为初始直径, 每次将直径减半, 并适当增大最大迭代次数, 获得下面一系列Mandelbrot集局部图像. 
+通过局部放大、手动调整中心、再局部放大、再手动调整中心……不断重复, 得到一个充分好的点：$c_0=(-0.72624686941319,0.240376999706965)$
+
+以$c_0$为中心, 执行局部放大算法(Algorithm.2), 获得下面一系列Mandelbrot集局部图像. （附件中的视频展示了放大过程）
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.18\textwidth]{img/pic0.png}
-    \includegraphics[width=0.18\textwidth]{img/pic1.png}
-    \includegraphics[width=0.18\textwidth]{img/pic2.png}
-    \includegraphics[width=0.18\textwidth]{img/pic3.png}
-    \includegraphics[width=0.18\textwidth]{img/pic4.png}
+    \includegraphics[width=0.18\textwidth]{img/pic50.png}
+    \includegraphics[width=0.18\textwidth]{img/pic100.png}
+    \includegraphics[width=0.18\textwidth]{img/pic150.png}
     \\
     \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic5.png}
-    \includegraphics[width=0.18\textwidth]{img/pic6.png}
-    \includegraphics[width=0.18\textwidth]{img/pic7.png}
-    \includegraphics[width=0.18\textwidth]{img/pic8.png}
-    \includegraphics[width=0.18\textwidth]{img/pic9.png}
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic200.png}
+    \includegraphics[width=0.18\textwidth]{img/pic250.png}
+    \includegraphics[width=0.18\textwidth]{img/pic300.png}
+    \includegraphics[width=0.18\textwidth]{img/pic350.png}
     \\
     \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic10.png}
-    \includegraphics[width=0.18\textwidth]{img/pic11.png}
-    \includegraphics[width=0.18\textwidth]{img/pic12.png}
-    \includegraphics[width=0.18\textwidth]{img/pic13.png}
-    \includegraphics[width=0.18\textwidth]{img/pic14.png}
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic400.png}
+    \includegraphics[width=0.18\textwidth]{img/pic450.png}
+    \includegraphics[width=0.18\textwidth]{img/pic500.png}
+    \includegraphics[width=0.18\textwidth]{img/pic550.png}
     \\
     \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic15.png}
-    \includegraphics[width=0.18\textwidth]{img/pic16.png}
-    \includegraphics[width=0.18\textwidth]{img/pic17.png}
-    \includegraphics[width=0.18\textwidth]{img/pic18.png}
-    \includegraphics[width=0.18\textwidth]{img/pic19.png}
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic600.png}
+    \includegraphics[width=0.18\textwidth]{img/pic650.png}
+    \includegraphics[width=0.18\textwidth]{img/pic700.png}
+    \includegraphics[width=0.18\textwidth]{img/pic750.png}
     \\
     \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic20.png}
-    \includegraphics[width=0.18\textwidth]{img/pic21.png}
-    \includegraphics[width=0.18\textwidth]{img/pic22.png}
-    \includegraphics[width=0.18\textwidth]{img/pic23.png}
-    \includegraphics[width=0.18\textwidth]{img/pic24.png}
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic800.png}
+    \includegraphics[width=0.18\textwidth]{img/pic850.png}
+    \includegraphics[width=0.18\textwidth]{img/pic900.png}
+    \includegraphics[width=0.18\textwidth]{img/pic950.png}
+    \\
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic1000.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1050.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1100.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1150.png}
     \\
     \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic25.png}
-    \includegraphics[width=0.18\textwidth]{img/pic26.png}
-    \includegraphics[width=0.18\textwidth]{img/pic27.png}
-    \includegraphics[width=0.18\textwidth]{img/pic28.png}
-    \includegraphics[width=0.18\textwidth]{img/pic29.png}
-    \\
-    \centering
-    \vspace{2pt} \includegraphics[width=0.18\textwidth]{img/pic30.png}
-    \includegraphics[width=0.18\textwidth]{img/pic31.png}
-    \includegraphics[width=0.18\textwidth]{img/pic32.png}
-    \includegraphics[width=0.18\textwidth]{img/pic33.png}
-    \includegraphics[width=0.18\textwidth]{img/pic34.png}
-    \caption{以(-0.72624685,0.240377)为中心展开的Mandelbrot集图像}
+    \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic1200.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1250.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1300.png}
+    \includegraphics[width=0.18\textwidth]{img/pic1350.png}
+    \caption{以(-0.72624686941319,0.240376999706965)为中心展开的Mandelbrot集图像}
 \end{figure}
 
 \section{无损压缩PNG编码器的原理与实现}
@@ -220,6 +264,8 @@ IHDR的Data部分由13个字节构成, 其具体含义如下:
 \subsubsection{IDAT的Data编码}
 
 对于一个$w\times h$大小的图像, 其IDAT的Data部分原始数据有$h*(1+w)$ bit, 设$R_{ij}$, $G_{ij}$, $B_{ij}$分别表示第$i$行第$j$列像素点的R/G/B值, 其编码方式可表述为: 
+
+\newpage
 \begin{equation*}
     0,R_{11},G_{11},B_{11},R_{12},G_{12},B_{12},\cdots,R_{1w},G_{1w},B_{1w},0,R_{21},G_{21},B_{21},R_{22},G_{22},B_{22},\cdots,R_{2w},G_{2w},B_{2w},\cdots
 \end{equation*}
@@ -234,31 +280,27 @@ IHDR的Data部分由13个字节构成, 其具体含义如下:
 
 \subsection{PNG编码器的实现与接口}
 
-本文根据上述原理实现了带deflate无损压缩的PNG编码器, 源码见: \href{https://Github.com/EbolaEmperor/MathSoftware/tree/main/Homework-4}{Github - 源码链接}, 函数接口见 \verb |png.h| , 函数实现见 \verb |png.cpp| .
-
-这款编码器封装优秀, 使用非常简易, 示例如下: 
-
-\begin{verbatim}
-    png myPng(1080,1920);                 //初始化一个高1080,宽1920的png
-    myPng.setpix(540,960,255,255,255);    //将第540行960列的像素RGB值设为(255,255,255)
-    myPng.output("myPng.png");            //将png图像输出到myPng.png中
-\end{verbatim}
+本文根据上述原理实现了带deflate无损压缩的PNG编码器, 源码见: \href{https://Github.com/EbolaEmperor/MathSoftware/tree/main/Homework-4}{Github - 源码链接}, 函数接口见 \verb |png.h| , 函数实现见 \verb |png.cpp|. 使用示例参考绘制Mandelbrot集的主程序. 
 
 \subsection{测试结果}
 
-图1中的所有图像均由本文PNG编码器生成.其中每个图都是$1920\times 1080$尺寸的高清图像, 若不带压缩, 每个图的大小约为: $\frac{1920\times 1080\times 3}{1024\times 1024}=6.2$(MB).使用本文PNG编码器, 35个图像总计61.3 MB, 平均单个图片大小1.75MB, 平均压缩率为$71.8\%$.
+图1中的所有图像均由本文PNG编码器生成.其中每个图都是$1920\times 1080$尺寸的高清图像, 若不带压缩, 每个图的大小约为: $\frac{1920\times 1080\times 3}{1024\times 1024}=6.2$(MB).使用本文PNG编码器, 28个图像总计52.0 MB, 平均单个图片大小1.86MB, 平均压缩率为$70\%$.
 
-事实上, 由于压缩算法的普遍特性, 当图像的重复元素较多时, 压缩率较高, 反之较低.图1中压缩率最大与压缩率最小的两个图像如下: 
+事实上, 由于压缩算法的普遍特性, 当图像的重复元素较多时, 压缩率较高, 反之较低.图1中压缩率最大与压缩率最小的两个图像如下. 左图仅152.3 kB, 压缩率为$97.6\%$；右图2.6MB, 压缩率为$58.1\%$.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.3\textwidth]{img/pic0.png}
+    \includegraphics[width=0.2\textwidth]{img/pic0.png}
     \hspace{15mm}
-    \includegraphics[width=0.3\textwidth]{img/pic23.png}
+    \includegraphics[width=0.2\textwidth]{img/pic750.png}
     \caption{图1中的两个典型图像}
 \end{figure}
 
-左图仅142.2 kB, 压缩率为$97.7\%$；右图2.6MB, 压缩率为$58.1\%$.
+\section{总结}
+
+本文实现了Mandelbrot集的绘制, 并得出了一系列优美的图像. 这些图像不仅能帮助复动力系统的理论研究者进行研究, 也能在工业设计、纺织等领域得到广泛的应用. 此外, 本文的代码实现优雅, 易读易用, 也不失为一个亮点. 
+
+美中不足之处是, 由于本文的代码实现中采用double类型的浮点数运算, 只能精确到小数点后大约18位, 因此无法继续将图形放大下去, 本文几乎已经在double的精度范围内放大到了极限. 这个问题可能需要引入高精度才能解决. 
 
 \bibliographystyle{plain}
 \bibliography{reference}

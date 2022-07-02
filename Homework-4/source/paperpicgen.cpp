@@ -1,21 +1,28 @@
 #include <stdlib.h>
 #include <cstdio>
+#include <cmath>
 
-int main()
+int main(int argc, char* argv[])
 {
-    double x = -0.72624685;
-    double y = 0.240377;
     double d = 5.0;
-    int n = 100;
-    char syscmd[80];
+    double n = 250;
+    char syscmd[160];
 
-    for(int i = 0; i < 35; i++)
+    double x = std::atof(argv[1]);
+    double y = std::atof(argv[2]);
+
+    for(int i = 0; i < 1400; i++)
     {
-        sprintf(syscmd, "./test img/pic%d.png %.8lf %.8lf %.12lf %d", i, x, y, d, n);
-        printf("%s\n", syscmd);
-        system(syscmd);
-        d *= 0.5;
-        if(i%3==1) n <<= 1;
+        sprintf(syscmd, "./test img/pic%d.png %.20lf %.20lf %.20lf %d", i, x, y, d, (int)round(n));
+        if(i%50 == 0)  //将此if条件改为恒true，可以生成1400张图片，然后用Pr可以制作一个视频
+        {
+            printf("%s\n", syscmd);
+            system(syscmd);
+        }
+        d *= 0.99;
+        d *= 0.99;
+        n *= 1.0025;
+        n *= 1.0025;
     }
 
     return 0;
