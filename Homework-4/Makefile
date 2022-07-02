@@ -1,10 +1,14 @@
-all:
-	xelatex report
-	bibtex report
-	xelatex report
-	xelatex report
-	rm report.aux
-	rm report.bbl
-	rm report.blg
-	rm report.log
-	rm report.out
+FNAME=report
+
+report: $(FNAME).tex reference.bib
+	xelatex $(FNAME)
+	bibtex $(FNAME)
+	xelatex $(FNAME)
+	xelatex $(FNAME)
+
+clean:
+	rm $(FNAME).aux
+	rm $(FNAME).bbl
+	rm $(FNAME).blg
+	rm $(FNAME).log
+	rm $(FNAME).out

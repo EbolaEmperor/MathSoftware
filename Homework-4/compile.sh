@@ -6,4 +6,4 @@ make
 ./paperpicgen
 cd ..
 mv source/img/ .
-make
+make report
