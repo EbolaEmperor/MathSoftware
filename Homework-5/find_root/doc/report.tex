@@ -1,0 +1,100 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{xeCJK}
+\usepackage{graphicx} %插入图片的宏包
+\usepackage{float} %设置图片浮动位置的宏包
+\usepackage{subfigure} %插入多图时用子图显示的宏包
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{verbatimbox}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage[colorlinks,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{cite}
+
+\newtheorem{example}{例}             % 整体编号
+\newtheorem{theorem}{定理}[section]  % 按 section 编号
+\newtheorem{definition}{定义}
+\newtheorem{axiom}{公理}
+\newtheorem{property}{性质}
+\newtheorem{proposition}{命题}
+\newtheorem{lemma}{引理}
+\newtheorem{corollary}{推论}
+\newtheorem{remark}{注解}
+\newtheorem{condition}{条件}
+\newtheorem{conclusion}{结论}
+\newtheorem{assumption}{假设}
+
+\geometry{a4paper,scale=0.8}
+\CTEXsetup[format={\Large\bfseries}]{section}
+
+\title{\textbf{roots.c分析}}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006}
+
+\begin{document}
+
+\maketitle
+
+\section{功能概述}
+
+此代码用Brent方法求函数$f(x)=x^2-5$的根, 从而得到$\sqrt{5}$的近似值. 
+
+\section{技术细节}
+
+第一部分代码如下：
+
+\begin{verbatim}
+    int status;
+    int iter = 0, max_iter = 100;
+    const gsl_root_fsolver_type *T;
+    gsl_root_fsolver *s;
+    double r = 0, r_expected = sqrt (5.0);
+    double x_lo = 0.0, x_hi = 5.0;
+    gsl_function F;
+    struct quadratic_params params = {1.0, 0.0, -5.0};
+  
+    F.function = &quadratic;
+    F.params = &params;
+
+    T = gsl_root_fsolver_brent;
+    s = gsl_root_fsolver_alloc (T);
+    gsl_root_fsolver_set (s, &F, x_lo, x_hi);
+\end{verbatim}
+
+这一部分代码调用了 \verb | demo_fn.c | 中实现的二次函数, 将 \verb |F.function| 定义为一个二次函数$f(x)=(ax+b)x+c$, 其中$a=1,b=0,c=-5$, 即为$f(x)=x^2-5$. 
+
+另外还初始化了一个Brent方法迭代器, 初始区间为$[0,5]$, 最大迭代次数限制为100. 
+
+第二部分代码如下：
+
+\begin{verbatim}
+    do
+    {
+      iter++;
+      status = gsl_root_fsolver_iterate (s);
+      r = gsl_root_fsolver_root (s);
+      x_lo = gsl_root_fsolver_x_lower (s);
+      x_hi = gsl_root_fsolver_x_upper (s);
+      status = gsl_root_test_interval (x_lo, x_hi,
+                                       0, 0.001);
+
+      if (status == GSL_SUCCESS)
+        printf ("Converged:\n");
+
+      printf ("%5d [%.7f, %.7f] %.7f %+.7f %.7f\n",
+              iter, x_lo, x_hi,
+              r, r - r_expected, 
+              x_hi - x_lo);
+    }
+  while (status == GSL_CONTINUE && iter < max_iter);
+
+  gsl_root_fsolver_free (s);
+\end{verbatim}
+
+这一部分代码是一个迭代过程. 每一次迭代分为计算当前步根、计算下一步区间范围、判断收敛、输出当前步信息四个步骤. 停机准则为超过最大迭代次数或达到收敛精度. 最后将迭代器的空间释放回收. 
+
+\end{document}
