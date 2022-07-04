@@ -5,7 +5,6 @@
 \usepackage{amsfonts}
 \usepackage{amsthm}
 \usepackage{xeCJK}
-\usepackage{graphicx} %插入图片的宏包
 \usepackage{float} %设置图片浮动位置的宏包
 \usepackage{subfigure} %插入多图时用子图显示的宏包
 \usepackage{geometry}
@@ -33,7 +32,7 @@
 \geometry{a4paper,scale=0.8}
 \CTEXsetup[format={\Large\bfseries}]{section}
 
-\title{\textbf{Manderbrot Set 的生成和探索}}
+\title{\textbf{Julia集的分析和探索}}
 
 \date{}
 
@@ -192,7 +191,7 @@ Julia集具有如下性质.
 
 这一节将取不同的函数、不同的迭代常数生成一些不一样的Julia集.
 
-取二次函数$f_c(z)=z^2+c$, 对于不同的常数$c$, 生成对应的Julia集, 如下. 左图$c=-0.5\in\mathcal{M}$; 中图$c=-0.72624686941319+0.240376999706965i\notin \mathcal{M}$但非常接近于$\partial \mathcal{M}$; 右图$c=-0.8+0.4i\notin \mathcal{M}$.
+取二次函数$f_c(z)=z^2+c$, 对于不同的常数$c$, 生成对应的Julia集, 如下. 左图$c=-0.5\in\mathcal{M}$; 中图$c=-0.726+0.240i\notin \mathcal{M}$但非常接近于$\partial \mathcal{M}$; 右图$c=-0.8+0.4i\notin \mathcal{M}$.
 
 \begin{figure}[H]
     \centering
@@ -204,7 +203,7 @@ Julia集具有如下性质.
 
 Julia教授本人所感兴趣的函数是: \cite{2019ComplexAnalysis} 
 \begin{equation*}
-    h(z)=z^4+\frac{z^3}{z^2-1}+\frac{z^2}{z^3+4z^2+5}+c
+    h_c(z)=z^4+\frac{z^3}{z^2-1}+\frac{z^2}{z^3+4z^2+5}+c
 \end{equation*}
 
 取$c=0,0.2i,0.4i,0.6i,0.8i,i$共六个值, 生成一共六张图, 如下(从上到下、从左到右排列).

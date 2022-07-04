@@ -1,0 +1,297 @@
+\documentclass[9pt]{beamer}
+\usepackage{ctex, hyperref}
+\usepackage[T1]{fontenc}
+
+% \usepackage[orientation=landscape,size=custom,width=16,height=9,scale=0.4,debug]{beamerposter}
+% 修改 slides 比例，
+
+% other packages
+\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
+\usepackage{graphicx,pstricks,listings,stackengine,cite}
+\usepackage{subfigure}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric}
+
+\setbeamertemplate{bibliography item}[text]
+\bibliographystyle{plain}
+% 如果参考文献太多的话，可以像下面这样调整字体：
+% \tiny\bibliographystyle{plain}
+
+\title{Julia集的分析和探索}
+% \subtitle{毕业设计答辩}
+\institute{浙江大学\ \ \ \ 数学科学学院}
+\date{2022/7/4}
+\usepackage{College}
+
+% defs
+\def\cmd#1{\texttt{\color{red}\footnotesize $\backslash$#1}}
+\def\env#1{\texttt{\color{blue}\footnotesize #1}}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\definecolor{halfgray}{gray}{0.55}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries\color{deepblue},
+    emphstyle=\ttfamily\color{deepred},    % Custom highlighting style
+    stringstyle=\color{deepgreen},
+    numbers=left,
+    numberstyle=\small\color{halfgray},
+    rulesepcolor=\color{red!20!green!20!blue!20},
+    frame=shadowbox,
+}
+
+
+\begin{document}
+
+\author{黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\ \ \ \ 3200100006\\ 数学与应用数学（强基计划）}
+
+\kaishu
+\begin{frame}
+    \titlepage
+    \begin{figure}[htpb]
+        \begin{center}
+            \vspace*{-0.5cm}
+            \includegraphics[width=0.2\linewidth]{pic/zju.jpg}
+        \end{center}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \tableofcontents[sectionstyle=show,subsectionstyle=show/shaded/hide,subsubsectionstyle=show/shaded/hide]
+\end{frame}
+
+
+\section{复函数迭代的基础理论}
+
+\begin{frame}{基本定义}
+    \begin{definition}
+        \small 设$U$是$\mathbb{C}\cup\{\infty\}$的开子集, $\mathcal{F}=\{f_i:U\to \mathbb{C}\cup\{\infty\}\;|\; i\in I\}$是一族子标集为$I$的亚纯函数. 称$\mathcal{F}$是\textbf{正规族}, 若每一个$\mathcal{F}$中的函数列$\{f_n\}$都存在一个在$U$中一致收敛的子列$\{f_{n_j}\}$. \cite{2014Fractals}
+    \end{definition}
+
+    \begin{definition}
+        \small 设$f:\mathbb{C}\to\mathbb{C}$是亚纯函数, 其\textbf{Fatou集}定义为：
+        \begin{equation*}
+            F(f)=\{z\in\mathbb{C}:\text{存在}z\text{的邻域N(x)使得}\{f^n|_{N(z)}\}\text{是正规族}\}
+        \end{equation*}
+        其\textbf{Julia集}定义为Fatou集的余集：$J(f)=\mathbb{C}\textbackslash F(f)$. \cite{2014Fractals}
+    \end{definition}
+
+    \begin{definition}
+        \small 记$f_c(z)=z^2+c$, 其中$c\in\mathbb{C}$. 称集合
+        \begin{equation*}
+            \mathcal{M}=\{c\in\mathbb{C}:f_c^{n}(0)\text{有界}\}
+        \end{equation*}
+        为\textbf{Mandelbrot集}.
+    \end{definition}
+\end{frame}
+
+\begin{frame}{基本性质与定理}
+    \begin{theorem}
+        \small Julia集是紧的完全集. \cite{2014Fractals}
+    \end{theorem}
+
+    \begin{definition}
+        \small 设$f:\mathbb{C}\to\mathbb{C}$是有理函数, 其\textbf{填充Julia集}定义为：
+        \begin{equation*}
+            J_{\text{fill}}(f)=\{z\in\mathbb{C}:f^n(z)\text{不发散于}\infty\}
+        \end{equation*}
+    \end{definition}
+    
+    \begin{theorem}
+        \small 设$f:\mathbb{C}\to\mathbb{C}$是有理函数, 其填充Julia集的边界是Julia集, 即$J(f)=\partial J_{\text{fill}}(f)$. \cite{尹永成2002The}
+    \end{theorem}
+
+    \begin{theorem}
+        \small 设$c\in\mathbb{C}$, $f_c(z)=z^2+c$, 则当$c\in\mathcal{M}$时, $J(f_c)$连通; 当$c\notin\mathcal{M}$时, $J(f_c)$不连通. \cite{2019ComplexAnalysis}
+    \end{theorem}
+\end{frame}
+
+
+\section{Julia集的图像生成}
+
+\begin{frame}
+    \begin{center}
+        \begin{tikzpicture}[node distance=10pt]
+            \node[draw, rounded corners]                        (start)   {
+                \tiny \begin{tabular}{c}
+                    输入迭代常数$c$, 中心点坐标$center$, 绘图区域直径$diam$, \\
+                    图片宽度$W$, 图片高度$H$, 最大迭代次数$N$, \\
+                    着色函数$g$, 文件名Fname
+                \end{tabular}
+            };
+            \node[draw, below=5pt of start]                         (step 1)  {\tiny $(i,j)\gets (0,0)$};
+            \node[draw, below=5pt of step 1]                        (step 2)  {\tiny 计算像素点$(i,j)$对应的复平面点$z_0$. 并令$k=0$};
+            \node[draw, below=5pt of step 2]                        (step 3)  {\tiny $z_{k+1}\gets f_c(z_k)$};
+            \node[draw, diamond, aspect=2, below=5pt of step 3]     (choice 1)  {\tiny $|z_k|\leq 2$ and $k<N$\;?};
+            \node[draw, right=30pt of choice 1]                 (step 4)  {\tiny $k\gets k+1$};
+            \node[draw, diamond, aspect=2, below=7pt of choice 1]     (choice 2)  {\tiny $k==N$\;?};
+            \tikzstyle{point} = [coordinate,on grid];
+            \node[draw, point, below=10pt of choice 2]               (virtualPoint 1) {};
+            \node[draw, left=30pt of virtualPoint 1]          (condition 1) {\tiny 将像素点$(i,j)$设为黑色};
+            \node[draw, right=30pt of virtualPoint 1]         (condition 2) {\tiny 将像素点$(i,j)$的颜色设为$g(k)$};
+            \node[draw, diamond, aspect=2, below=10pt of virtualPoint 1]     (choice 3)  {\tiny $(i,j)$是最后一个像素点 ?};
+            \node[draw, right=60pt of choice 3]                 (step 6)  {\tiny $(i,j)\gets (i,j)$的下一个像素点};
+            \node[draw, rounded corners, below=7pt of choice 3]  (end)     {\tiny 将图片输出为Fname.png};
+            
+            \draw[->] (start)  -- (step 1);
+            \draw[->] (step 1) -- (step 2);
+            \draw[->] (step 2) -- (step 3);
+            \draw[->] (step 3) -- (choice 1);
+            \draw[->] (choice 1) -- node[above]  {\tiny Yes} (step 4);
+            \draw[->] (choice 1) -- node[left] {\tiny No}  (choice 2);
+            \draw[->] (step 4) -- (step 4|-step 3) -> (step 3);
+            \draw[->] (choice 2) -- node[above] {\tiny Yes} (condition 1|-choice 2) -> (condition 1);
+            \draw[->] (choice 2) -- node[above] {\tiny No}  (condition 2|-choice 2) -> (condition 2);
+            \draw[->] (condition 1) -- (choice 3);
+            \draw[->] (condition 2) -- (choice 3);
+            \draw[->] (choice 3) -- node[above] {\tiny No}  (step 6);
+            \draw[->] (step 6) -- (step 6|-step 2) -> (step 2);
+            \draw[->] (choice 3) -- node[left] {\tiny Yes}  (end);
+        \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}
+    \begin{equation*}
+        f_c(z)=z^2+c
+    \end{equation*}
+    \begin{figure}[H]
+        \centering
+        \subfigure[$c=-0.5$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig1/pic0.png}
+            \end{minipage}}
+        \subfigure[$c=-0.726+0.240i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig1/pic1.png}
+            \end{minipage}}
+        \subfigure[$c=-0.8+0.4i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig1/pic2.png}
+            \end{minipage}}
+        \caption{$f_c$的Julia集}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \begin{equation*}
+        h_c(z)=z^4+\frac{z^3}{z^2-1}+\frac{z^2}{z^3+4z^2+5}+c
+    \end{equation*}
+    \begin{figure}[H]
+        \centering
+        \subfigure[$c=0$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic0.png}
+            \end{minipage}}
+        \subfigure[$c=0.2i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic1.png}
+            \end{minipage}}
+        \subfigure[$c=0.4i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic2.png}
+            \end{minipage}}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \subfigure[$c=0.6i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic3.png}
+            \end{minipage}
+        }
+        \subfigure[$c=0.8i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic4.png}
+            \end{minipage}}
+        \subfigure[$c=i$]{
+            \begin{minipage}[b]{0.28\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig2/pic5.png}
+            \end{minipage}}
+        \caption{$h_c$的Julia集}
+    \end{figure}
+\end{frame}
+
+
+
+\section{Julia集与Mandelbrot集图像的相似性}
+
+\begin{frame}{Julia集与Mandelbrot集图像的相似性}
+    取$c=(0.2542099079452338,-0.0004374588482306643)$, $f_c(z)=z^2+c$
+
+    \begin{figure}[H]
+        \centering
+        \subfigure[$0.670$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic100.png}
+            \end{minipage}
+        }
+        \subfigure[$0.245$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic150.png}
+            \end{minipage}
+        }
+        \subfigure[$0.090$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic200.png}
+            \end{minipage}
+        }
+        \subfigure[$0.033$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic250.png}
+            \end{minipage}
+        }
+        \subfigure[$0.012$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic300.png}
+            \end{minipage}
+        }
+        \caption{$f_c$的Julia集在原点的放大图像, 图片下方标注绘图半径}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \subfigure[$1.418\times 10^{-6}$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic100.png}
+            \end{minipage}
+        }
+        \subfigure[$0.519\times 10^{-6}$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic150.png}
+            \end{minipage}
+        }
+        \subfigure[$0.190\times 10^{-6}$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic200.png}
+            \end{minipage}
+        }
+        \subfigure[$0.070\times 10^{-6}$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic250.png}
+            \end{minipage}
+        }
+        \subfigure[$0.025\times 10^{-6}$]{
+            \begin{minipage}[b]{0.16\linewidth}
+                \includegraphics[width=1\linewidth]{../img/fig3/pic300.png}
+            \end{minipage}
+        }
+        \caption{Mandelbrot集以$c$点为中心的放大图像, 图片下方标注绘图半径}
+    \end{figure}
+    
+\end{frame}
+
+\section{参考文献}
+
+\begin{frame}[allowframebreaks]
+    \bibliography{reference}
+\end{frame}
+
+\begin{frame}
+    \frametitle{谢谢}
+    \centering
+    \Large Thaks for Your Attention!
+\end{frame}
+
+\end{document}
