@@ -1,0 +1,287 @@
+\documentclass[UTF8]{ctexart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{xeCJK}
+\usepackage{graphicx} %插入图片的宏包
+\usepackage{float} %设置图片浮动位置的宏包
+\usepackage{subfigure} %插入多图时用子图显示的宏包
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{verbatimbox}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage[colorlinks,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric}
+
+\newtheorem{example}{例}             % 整体编号
+\newtheorem{theorem}{定理}[section]  % 按 section 编号
+\newtheorem{definition}{定义}
+\newtheorem{axiom}{公理}
+\newtheorem{property}{性质}
+\newtheorem{proposition}{命题}
+\newtheorem{lemma}{引理}
+\newtheorem{corollary}{推论}
+\newtheorem{remark}{注解}
+\newtheorem{condition}{条件}
+\newtheorem{conclusion}{结论}
+\newtheorem{assumption}{假设}
+
+\geometry{a4paper,scale=0.8}
+\CTEXsetup[format={\Large\bfseries}]{section}
+
+\title{\textbf{Manderbrot Set 的生成和探索}}
+
+\date{}
+
+\author{\CJKfamily{kai} 黄文\hbox{\scalebox{0.6}[1]{羽}\kern-.1em\scalebox{0.5}[1]{中}}\\3200100006\\数学与应用数学（强基计划）}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    \CJKfamily{kai} 本文介绍了复函数迭代的理论基础, 提出了Julia集图像的生成算法, 并生成了一系列Julia集图像, 并尝试了不同于二次函数的其它函数. 此外, 本文研究了Julia集与Mandelbrot集之间的关系, 生成了系列图像展示后者对前者连通性的影响, 以及二者的相似性.
+\end{abstract}
+
+\section{引言}
+
+本文的第一部分介绍了复动力系统中函数迭代相关的基础理论, 包括Julia集、Fatou集、Mandelbrot集的定义与性质, 以及它们之间的关系. 其中的主要内容参考了尹永成教授的报告. 在此特别感谢尹永成教授、王晓光教授在分析学、复变函数课程上的学术分享, 笔者对他们在复动力系统中所做的建设性研究工作感到无比敬佩. 
+
+本文的第二部分介绍了生成填充Julia集的算法, 并以二次函数$f(z)=z^2+c$为例, 取不同的$c$值, 生成了对应的Julia集图像, 展示了Mandelbrot集内部与外部的点对Julia集连通性的影响. 此外, 还使用了不同类型的函数, 包括Julia教授当年研究的函数, 给出了对应的Julia集图像. 
+
+本文的第三部分介绍了Julia集的局部放大算法, 生成了特定点的系列放大图, 与对应点的Mandelbrot集局部放大图像对比, 通过对比可以观察到二者具有极高的相似性. 
+
+本文的最后总结了本文的结果, 并给出了改进的可能. 
+
+此外, 为了避免本文的符号歧义, 这里事先约定$f^n$表示函数$f$的$n$次迭代, 而不是$n$次方. 
+
+\section{复函数迭代的理论基础}
+
+\begin{definition}
+    设$U$是$\mathbb{C}\cup\{\infty\}$的开子集, $\mathcal{F}=\{f_i:U\to \mathbb{C}\cup\{\infty\}\;|\; i\in I\}$是一族子标集为$I$的亚纯函数. 称$\mathcal{F}$是\textbf{正规族}, 若每一个$\mathcal{F}$中的函数列$\{f_n\}$都存在一个在$U$中一致收敛的子列$\{f_{n_j}\}$. \cite{2014Fractals}
+\end{definition}
+
+\begin{definition}
+    设$f:\mathbb{C}\to\mathbb{C}$是亚纯函数, 其\textbf{Fatou集}定义为：
+    \begin{equation*}
+        F(f)=\{z\in\mathbb{C}:\text{存在}z\text{的邻域N(x)使得}\{f^n|_{N(z)}\}\text{是正规族}\}
+    \end{equation*}
+    其\textbf{Julia集}定义为Fatou集的余集：$J(f)=\mathbb{C}\textbackslash F(f)$. \cite{2014Fractals}
+\end{definition}
+
+上述定义并不直观, 无法直接应用于图像生成. 下面给出一个更加直观的定义. 
+
+\begin{definition}
+    设$f:\mathbb{C}\to\mathbb{C}$是有理函数, 其\textbf{填充Julia集}定义为：
+    \begin{equation*}
+        J_{\text{fill}}(f)=\{z\in\mathbb{C}:f^n(z)\text{不发散于}\infty\}
+    \end{equation*}
+\end{definition}
+
+关于填充Julia集与Julia集的关系, 我们可以给出以下命题. 
+
+\begin{proposition}
+    设$f:\mathbb{C}\to\mathbb{C}$是有理函数, 其填充Julia集的边界是Julia集, 即$J(f)=\partial J_{\text{fill}}(f)$. \cite{尹永成2002The}
+\end{proposition}
+
+Julia集具有如下性质.
+
+\begin{property}
+    Julia集是紧的完全集. \cite{2014Fractals}
+\end{property}
+
+\begin{property}
+    Julia集要么没有内点, 要么是$\mathbb{C}$. \cite{2014Fractals}
+\end{property}
+
+再给出Mandelbrot集的定义与简单性质.
+
+\begin{definition}
+    记$f_c(z)=z^2+c$, 其中$c\in\mathbb{C}$. 称集合
+    \begin{equation*}
+        \mathcal{M}=\{c\in\mathbb{C}:f_c^{n}(0)\text{有界}\}
+    \end{equation*}
+    为\textbf{Mandelbrot集}.
+\end{definition}
+
+\begin{proposition}
+    设$c\in\mathbb{C}$, 若$c\in\mathcal{M}$, 则$|f_c^{n}(0)|\leq 2\;(\forall n\in\mathbb{N})$. \cite{branner1989mandelbrot}
+\end{proposition}
+
+关于Mandelbrot集的边界, M.Shishikura曾证明了如下定理. (HD表示Hausdorff维数)
+
+\begin{theorem}
+    $HD(\partial \mathcal{M})=2$ \cite{Mitsuhiro1998The} 
+\end{theorem}
+
+再给出Julia集与Mandelbrot集的关系.
+
+\begin{theorem}
+    设$c\in\mathbb{C}$, $f_c(z)=z^2+c$, 则当$c\in\mathcal{M}$时, $J(f_c)$连通; 当$c\notin\mathcal{M}$时, $J(f_c)$不连通. \cite{2019ComplexAnalysis}
+\end{theorem}
+
+在基础理论部分的最后. 为了致敬在复动力系统领域做出杰出贡献的尹永成教授、王晓光教授. 同时也是我最喜欢的两位数学老师. 笔者展示一个由他们与曾劲松教授共同证明的定理.
+
+\begin{theorem}
+    对于任意次的多项式Newton迭代. 根吸引域的每个连通分支的边界是局部连通的. 
+\end{theorem}
+
+\section{Julia集的图像生成}
+
+\subsection{算法描述}
+
+像素点坐标与复平面坐标之间的转化不是本质的. 因此在这一节中略去不表. 
+
+算法的基本思想是：取定一个点$z_0$. 取定最大迭代次数$N$. 从$z_0$开始. 让$z_k=f_c(z_{k-1})$. 不断迭代. 直到达到最大迭代次数或模长超过2. 达到最大迭代次数即判定为收敛. 将其视为填充Julia集内部的点. 
+
+染色方案为对于填充Julia集内部的点. 染黑色；对于外部的点. 按照其迭代到模长超过2所需的迭代次数. 染上不同的颜色. 染色函数为$g:\mathbb{N}\to\mathbb{Z}_{256}^3$. 本文采用的染色函数为
+
+\begin{equation*}
+    g(n)=(155\log_2(n)\mod 180,100,\;255\log_2(n)\mod 256)
+\end{equation*}
+
+这一染色函数的特点是利用了自然溢出. 总是可以保证相邻两个迭代次数的颜色是不一样的. 这就保证了不断放大都能得到非平凡的图像. 而不会像通常的线性染色函数. 放大到充分大时退化为单色. 
+
+下面给出算法流程图描述. 
+
+\begin{center}
+    \begin{tikzpicture}[node distance=10pt]
+        \node[draw, rounded corners]                        (start)   {
+            \begin{tabular}{c}
+                输入迭代常数$c$, 中心点坐标$center$, 绘图区域直径$diam$, \\
+                图片宽度$W$, 图片高度$H$, 最大迭代次数$N$, \\
+                着色函数$g$, 文件名Fname
+            \end{tabular}
+        };
+        \node[draw, below=of start]                         (step 1)  {$(i,j)\gets (0,0)$};
+        \node[draw, below=of step 1]                        (step 2)  {计算像素点$(i,j)$对应的复平面点$z_0$. 并令$k=0$};
+        \node[draw, below=of step 2]                        (step 3)  {$z_{k+1}\gets f_c(z_k)$};
+        \node[draw, diamond, aspect=2, below=of step 3]     (choice 1)  {$|z_k|\leq 2$ and $k<N$\;?};
+        \node[draw, right=30pt of choice 1]                 (step 4)  {$k\gets k+1$};
+        \node[draw, diamond, aspect=2, below=of choice 1]     (choice 2)  {$k==N$\;?};
+        \tikzstyle{point} = [coordinate,on grid];
+        \node[draw, point, below=30pt of choice 2]               (virtualPoint 1) {};
+        \node[draw, left=30pt of virtualPoint 1]          (condition 1) {将像素点$(i,j)$设为黑色};
+        \node[draw, right=30pt of virtualPoint 1]         (condition 2) {将像素点$(i,j)$的颜色设为$g(k)$};
+        \node[draw, diamond, aspect=2, below=30pt of virtualPoint 1]     (choice 3)  {$(i,j)$是最后一个像素点 ?};
+        \node[draw, right=60pt of choice 3]                 (step 6)  {$(i,j)\gets (i,j)$的下一个像素点};
+        \node[draw, rounded corners, below=20pt of choice 3]  (end)     {将图片输出为Fname.png};
+        
+        \draw[->] (start)  -- (step 1);
+        \draw[->] (step 1) -- (step 2);
+        \draw[->] (step 2) -- (step 3);
+        \draw[->] (step 3) -- (choice 1);
+        \draw[->] (choice 1) -- node[above]  {Yes} (step 4);
+        \draw[->] (choice 1) -- node[left] {No}  (choice 2);
+        \draw[->] (step 4) -- (step 4|-step 3) -> (step 3);
+        \draw[->] (choice 2) -- node[above] {Yes} (condition 1|-choice 2) -> (condition 1);
+        \draw[->] (choice 2) -- node[above] {No}  (condition 2|-choice 2) -> (condition 2);
+        \draw[->] (condition 1) -- (choice 3);
+        \draw[->] (condition 2) -- (choice 3);
+        \draw[->] (choice 3) -- node[above] {No}  (step 6);
+        \draw[->] (step 6) -- (step 6|-step 2) -> (step 2);
+        \draw[->] (choice 3) -- node[left] {Yes}  (end);
+    \end{tikzpicture}
+\end{center}
+
+\subsection{图像生成与观察}
+
+这一节将取不同的函数、不同的迭代常数生成一些不一样的Julia集.
+
+取二次函数$f_c(z)=z^2+c$, 对于不同的常数$c$, 生成对应的Julia集, 如下. 左图$c=-0.5\in\mathcal{M}$; 中图$c=-0.72624686941319+0.240376999706965i\notin \mathcal{M}$但非常接近于$\partial \mathcal{M}$; 右图$c=-0.8+0.4i\notin \mathcal{M}$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{../img/fig1/pic0.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig1/pic1.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig1/pic2.png}
+    \caption{Julia集在不同类型点处的图像}
+\end{figure}
+
+Julia教授本人所感兴趣的函数是: \cite{2019ComplexAnalysis} 
+\begin{equation*}
+    h(z)=z^4+\frac{z^3}{z^2-1}+\frac{z^2}{z^3+4z^2+5}+c
+\end{equation*}
+
+取$c=0,0.2i,0.4i,0.6i,0.8i,i$共六个值, 生成一共六张图, 如下(从上到下、从左到右排列).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{../img/fig2/pic0.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig2/pic1.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig2/pic2.png}
+    \\
+    \centering
+    \vspace{3pt} \includegraphics[width=0.3\textwidth]{../img/fig2/pic3.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig2/pic4.png}
+    \includegraphics[width=0.3\textwidth]{../img/fig2/pic5.png}
+    \caption{Julia教授感兴趣的函数的Julia集在不同点处的图像}
+\end{figure}
+
+\section{Julia集与Mandelbrot集图像的相似性}
+
+二次函数的Julia集与Mandelbrot集一样具有无限分形的性质, 且取定$c$后, $J(f_c)$的局部放大图像与Mandelbrot集在$c$点的放大图像具有相似性, 本节对二者的放大过程进行观察. 
+
+\subsection{Julia集图像的局部放大算法}
+
+Julia集的局部放大算法非常简单, 只需固定$0$为绘图中心, 不断缩小绘图半径即可. 下面的算法生成8张局部放大图像, 每张图都是前一张图放大2.73倍的结果. 下面算法中的\textbf{drawJuliaImage}是第3.1节中算法流程图描述的Julia集生成算法.
+
+\begin{algorithm}[H]
+	\caption{getLocalJuliaImages}
+	\small
+	\KwIn{ 中心点坐标center, 图片宽度W, 图片高度H, 着色函数g}
+	\KwOut{ picture\_1.png, ..., picture\_8.png }
+	
+    $d=5.0$\\
+    $N=10000$\\
+	\For{$i=1$ to $8$ }
+	{
+        \textbf{drawJuliaImage}(center,d,W,H,N,g,picture\_$i$)
+        $d\gets d \times 0.99^{100}$
+	}
+\end{algorithm}
+
+\subsection{图像生成与对比观察}
+
+取$c=(0.2542099079452338,-0.0004374588482306643)$, 用上述算法生成$J(f_c)$在$0$处的一系列放大图像, 从第3张开始的连续5张具有代表性, 展示如下.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.19\textwidth]{../img/fig3/pic100.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig3/pic150.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig3/pic200.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig3/pic250.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig3/pic300.png}
+    \caption{$f_c$的Julia集在原点的放大图像}
+\end{figure}
+
+用Mandelbrot集放大算法生成$c$点为中心的一系列放大图像, 从第16张(绘图半径$0.00000191$)开始的连续5张具有代表性, 展示如下.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.19\textwidth]{../img/fig4/pic750.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig4/pic800.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig4/pic850.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig4/pic900.png}
+    \includegraphics[width=0.19\textwidth]{../img/fig4/pic950.png}
+    \caption{Mandelbrot集在$c$点的的放大图像}
+\end{figure}
+
+对比观察上面两组图. 可以发现它们具有很高的相似性.
+
+\section{总结}
+
+笔者对文中出现的算法均做了相应的实现, 可以在笔者的\href{https://Github.com/EbolaEmperor/MathSoftware/tree/main/Final}{Github仓库}中找到. 除引用的zlib开源库之外, 所有代码均由笔者独立完成, 在标明出处的前提下, 源代码允许任意下载使用并修改. 
+
+本文实现了Julia集图像的生成, 使用了基于$\log$与自然溢出的染色函数进行染色, 生成了不同函数、不同迭代常数的Julia集图像. 此外, 本文还考虑迭代常数是否在Mandelbrot集对二次函数的Julia集的连通性的影响. 同时观察了Mandelbrot集与Julia集的放大过程, 展示了二者图像的相似性.
+
+本文的不足之处在于图像放大的精度限制. 在国内某视频网站中已经有作者制作出连续放大1小时的视频, 其放大速率与笔者相同, 而笔者所生成的视频仅有约1分钟, 这表明此视频作者的计算精度至少是双精度浮点数的的60倍. 笔者认为, 采用高精度计算将解决图片无法继续放大的问题.
+
+\bibliographystyle{plain}
+\bibliography{reference}
+
+\end{document}
