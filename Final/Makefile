@@ -25,3 +25,7 @@ clean:
 	$(shell if [ -e img/ ];then rm -rf img/; fi)
 	$(shell if [ -e doc/$(FNAME).out ];then rm doc/$(FNAME).out; fi)
 	rm doc/$(FNAME).aux doc/$(FNAME).bbl doc/$(FNAME).blg doc/$(FNAME).log
+
+cleandoc:
+	$(shell if [ -e doc/$(FNAME).out ];then rm doc/$(FNAME).out; fi)
+	rm doc/$(FNAME).aux doc/$(FNAME).bbl doc/$(FNAME).blg doc/$(FNAME).log
