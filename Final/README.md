@@ -26,6 +26,12 @@ make report
 make clean
 ```
 
+使用以下命令仅清除编译report产生的中间文件
+
+```bash
+make cleandoc
+```
+
 ## 测试说明
 
 编译后得到论文，同时在`bin`目录下生成可执行文件`mandelbrotGen`,`juliaGen`,`paperpicgen1.sh`,`paperpicgen2.sh`,`paperpicgen3`,`paperpicgen4`
