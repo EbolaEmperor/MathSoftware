@@ -8,8 +8,8 @@ int main(int argc, char* argv[])
     double n = 250;
     char syscmd[160];
 
-    double x = std::atof(argv[1]);
-    double y = std::atof(argv[2]);
+    double x = atof(argv[1]);
+    double y = atof(argv[2]);
 
     for(int i = 0; i < 1400; i++)
     {

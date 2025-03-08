@@ -154,9 +154,9 @@ Mandelbrot集最为人熟知的性质就是无限分形, 以特定的点为中�
     $N=250$\\
 	\For{$i=1$ to $28$ }
 	{
-        \textbf{drawMandelbrotImage}(center,d,W,H,N,g,picture\_$i$)
-        $d\gets d \times 0.99^100$
-        $N\gets round(N \times 1.0025^100)$
+        \textbf{drawMandelbrotImage}(center,d,W,H,N,g,picture\_$i$)\\
+        $d\gets d \times 0.99^{100}$\\
+        $N\gets round(N \times 1.0025^{100})$
 	}
 \end{algorithm}
 
@@ -196,17 +196,16 @@ Mandelbrot集的边界点无法用初等表达式给出, 在计算机中无法�
     \includegraphics[width=0.18\textwidth]{img/pic650.png}
     \includegraphics[width=0.18\textwidth]{img/pic700.png}
     \includegraphics[width=0.18\textwidth]{img/pic750.png}
-    \\
+\end{figure}
+
+\begin{figure}[H]
+    \centering
     \centering
     \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic800.png}
     \includegraphics[width=0.18\textwidth]{img/pic850.png}
     \includegraphics[width=0.18\textwidth]{img/pic900.png}
     \includegraphics[width=0.18\textwidth]{img/pic950.png}
     \\
-\end{figure}
-
-\begin{figure}[H]
-    \centering
     \vspace{3pt} \includegraphics[width=0.18\textwidth]{img/pic1000.png}
     \includegraphics[width=0.18\textwidth]{img/pic1050.png}
     \includegraphics[width=0.18\textwidth]{img/pic1100.png}
@@ -237,10 +236,10 @@ Mandelbrot集的边界点无法用初等表达式给出, 在计算机中无法�
     \begin{tabular}{|c|c|c|}
         \hline
         \textbf{名称} & \textbf{长度} & \textbf{说明} \\ \hline
-        Length & 4 bit & Data部分的字节数, 用32位无符号整型方式编码 \\ \hline
-        Tag & 4 bit & 数据块名称对应的ASCII码的十六进制, 例如IHDR的Tag部分为 \verb |4948 4452| \\ \hline
+        Length & 4 byte & Data部分的字节数, 用32位无符号整型方式编码 \\ \hline
+        Tag & 4 byte & 数据块名称对应的ASCII码的十六进制, 例如IHDR的Tag部分为 \verb |4948 4452| \\ \hline
         Data & 可变长 & 数据块实际存储的数据内容 \\ \hline
-        CRC & 4 bit & 从Tag开头到Data结束部分的4字节CRC校验码 \\ \hline
+        CRC & 4 byte & 从Tag开头到Data结束部分的4字节CRC校验码 \\ \hline
     \end{tabular}
 \end{table}
 
@@ -252,20 +251,18 @@ IHDR的Data部分由13个字节构成, 其具体含义如下:
 
 \begin{enumerate}[itemindent=2em]
     \setlength{\itemsep}{-5pt}
-    \item \verb| width |: 4bit, 32位无符号整数表示图片宽度
-    \item \verb| height |: 4bit, 32位无符号整数表示图片高度
-    \item \verb| bit depth |: 1bit, 表示图像深度, 本文取 \verb |0x08| 表示8位
-    \item \verb| color type |: 1bit, 表示色彩类型, 本为取 \verb |0x02| 表示真彩色图像
-    \item \verb| compression |: 1bit, 表示压缩方式, 本文取 \verb |0x00| 表示deflate/inflate无损压缩
-    \item \verb| filter |: 1bit, 表示滤波器方法, 本文取 \verb |0x00| 表示自适应选择, 实际上本文不做滤波器
-    \item \verb| interlance |: 1bit, 表示扫描方法, 本文取 \verb |0x00| 表示非隔行扫描
+    \item \verb| width |: 4byte, 32位无符号整数表示图片宽度
+    \item \verb| height |: 4byte, 32位无符号整数表示图片高度
+    \item \verb| bit depth |: 1byte, 表示图像深度, 本文取 \verb |0x08| 表示8位
+    \item \verb| color type |: 1byte, 表示色彩类型, 本为取 \verb |0x02| 表示真彩色图像
+    \item \verb| compression |: 1byte, 表示压缩方式, 本文取 \verb |0x00| 表示deflate/inflate无损压缩
+    \item \verb| filter |: 1byte, 表示滤波器方法, 本文取 \verb |0x00| 表示自适应选择, 实际上本文不做滤波器
+    \item \verb| interlance |: 1byte, 表示扫描方法, 本文取 \verb |0x00| 表示非隔行扫描
 \end{enumerate}
 
 \subsubsection{IDAT的Data编码}
 
-对于一个$w\times h$大小的图像, 其IDAT的Data部分原始数据有$h*(1+w)$ bit, 设$R_{ij}$, $G_{ij}$, $B_{ij}$分别表示第$i$行第$j$列像素点的R/G/B值, 其编码方式可表述为: 
-
-\newpage
+对于一个$w\times h$大小的图像, 其IDAT的Data部分原始数据有$h*(1+w)$ byte, 设$R_{ij}$, $G_{ij}$, $B_{ij}$分别表示第$i$行第$j$列像素点的R/G/B值, 其编码方式可表述为: 
 \begin{equation*}
     0,R_{11},G_{11},B_{11},R_{12},G_{12},B_{12},\cdots,R_{1w},G_{1w},B_{1w},0,R_{21},G_{21},B_{21},R_{22},G_{22},B_{22},\cdots,R_{2w},G_{2w},B_{2w},\cdots
 \end{equation*}
@@ -290,9 +287,9 @@ IHDR的Data部分由13个字节构成, 其具体含义如下:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.2\textwidth]{img/pic0.png}
+    \includegraphics[width=0.3\textwidth]{img/pic0.png}
     \hspace{15mm}
-    \includegraphics[width=0.2\textwidth]{img/pic750.png}
+    \includegraphics[width=0.3\textwidth]{img/pic750.png}
     \caption{图1中的两个典型图像}
 \end{figure}
 
